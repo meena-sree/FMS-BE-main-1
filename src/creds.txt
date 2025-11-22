@@ -1,9 +1,0 @@
-AdminSnipe@987				                ====>SuperAdmin
-superadmin@example.com
-=================================
-"email": "ravi.admin@gmail.com",	        ====>Admin
-  "password": "Admin123"
-
-=====================================
-alex.lead@yourcompany.com
-Admin123
