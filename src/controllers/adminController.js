@@ -217,3 +217,108 @@ export const updateClientByAdmin = async (req, res) => {
 //       ]
 //     }
 //   ]}
+// controllers/managerController.js
+
+import Manager from "../models/Manager.js";
+import User from "../models/User.js";
+import bcrypt from "bcryptjs";
+
+export const addManager = async (req, res) => {
+  try {
+    const { name, email, password, phone, clientId, allowedRegion } = req.body;
+
+    // --------------------------
+    // 1️⃣ Required field checks
+    // --------------------------
+    if (!name || !email || !password || !phone || !clientId) {
+      return res.status(400).json({
+        message:
+          "name, email, password, phone, and clientId are mandatory fields.",
+      });
+    }
+
+    // -------------------------------------
+    // 2️⃣ Check if email already exists
+    // -------------------------------------
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ message: "Email already exists." });
+    }
+
+    // -------------------------------------
+    // 3️⃣ Validate allowedRegion
+    // -------------------------------------
+    if (!allowedRegion) {
+      return res.status(400).json({ message: "allowedRegion is required." });
+    }
+
+    // Allowed values:
+    // "all"
+    // { type: "Polygon", coordinates: [...] }
+    // { type: "MultiPolygon", coordinates: [...] }
+
+    if (allowedRegion !== "all") {
+      const { type, coordinates } = allowedRegion;
+
+      if (!["Polygon", "MultiPolygon"].includes(type)) {
+        return res
+          .status(400)
+          .json({ message: "Invalid GeoJSON type for allowedRegion" });
+      }
+
+      if (!Array.isArray(coordinates)) {
+        return res
+          .status(400)
+          .json({ message: "GeoJSON coordinates must be an array" });
+      }
+    }
+
+    // -------------------------------------
+    // 4️⃣ Hash password
+    // -------------------------------------
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // -------------------------------------
+    // 5️⃣ Create Manager
+    // -------------------------------------
+    const manager = await Manager.create({
+      clientId,
+      phone,
+      allowedRegion,
+    });
+
+    // -------------------------------------
+    // 6️⃣ Create linked User (role = Manager)
+    // -------------------------------------
+    const user = await User.create({
+      name,
+      email,
+      passwordHash,
+      role: "Manager",
+      clientId,
+      managerId: manager._id,
+    });
+
+    // -------------------------------------
+    // 7️⃣ Response
+    // -------------------------------------
+    return res.status(201).json({
+      message: "Manager created successfully.",
+      manager: {
+        id: manager._id,
+        phone: manager.phone,
+        clientId: manager.clientId,
+        allowedRegion: manager.allowedRegion,
+      },
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Add Manager Error:", error);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+};

@@ -242,7 +242,7 @@ export const login = async (req, res) => {
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    console.log(`this is from login ${user}`);
+    // console.log(`this is from login ${user}`);
 
     // ⭐ GET CLIENT DOCUMENT BASED ON ROLE
     const client = await getClientForRole(user);

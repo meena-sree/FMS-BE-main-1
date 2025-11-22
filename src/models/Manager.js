@@ -2,31 +2,11 @@ import mongoose from "mongoose";
 
 const managerSchema = new mongoose.Schema(
   {
-    // Admin who created this manager
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-
     // Manager belongs to a client (institution)
     clientId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Client",
       required: true,
-    },
-
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
     },
 
     phone: {
@@ -46,7 +26,7 @@ const managerSchema = new mongoose.Schema(
     //   - MultiPolygon (GeoJSON)
     // ============================================
     allowedRegion: {
-      type: mongoose.Schema.Types.Mixed, 
+      type: mongoose.Schema.Types.Mixed,
       required: true,
       // Example:
       // "all"

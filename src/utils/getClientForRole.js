@@ -6,7 +6,7 @@ import Client from "../models/Client.js";
 // import User from "../models/User.js";
 
 export const getClientForRole = async (user) => {
-  console.log(`this is from getClientForRole ${user}`);
+  // console.log(`this is from getClientForRole ${user}`);
   switch (user.role) {
     case "SuperAdmin":
       return null;
