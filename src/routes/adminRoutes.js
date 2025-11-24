@@ -16,5 +16,10 @@ router.put(
 
 // routes/managerRoutes.js
 
-router.post("/add", authMiddleware, roleMiddleware("Admin"), addManager);
+router.post(
+  "/add-manager",
+  authMiddleware,
+  roleMiddleware("Admin"),
+  addManager
+);
 export default router;

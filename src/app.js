@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser"; // 👈 NEW IMPORT
 import connectDB from "./config/database.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/superAdminRoutes.js";
+import franchiseLeadRoutes from "./routes/franchiseLeadRoutes.js";
 // import attendanceRoutes from "./routes/attendanceRoutes.js";
 import { notFound } from "./middleware/not-found.js";
 // import "./utils/scheduler.js"; // Import scheduler
@@ -50,6 +51,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/manager/franchise", franchiseLeadRoutes);
 // app.use("/api/user", attendanceRoutes);
 
 // ----------------------------------------------------

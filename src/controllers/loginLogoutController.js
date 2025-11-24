@@ -226,6 +226,19 @@ export const login = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "Invalid credentials" });
 
+    // ===========
+    // ❗ 1. Check if user account is active
+    if (!user.isActive) {
+      return res
+        .status(403)
+        .json({ message: "Your account is not active. Please contact Admin." });
+    }
+
+    console.log(user);
+    // ⭐ 2. Get client based on role
+    const client = await getClientForRole(user);
+    console.log(`hi details ${client} `);
+
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch)
       return res.status(401).json({ message: "Invalid credentials" });
@@ -243,10 +256,6 @@ export const login = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     // console.log(`this is from login ${user}`);
-
-    // ⭐ GET CLIENT DOCUMENT BASED ON ROLE
-    const client = await getClientForRole(user);
-    console.log(`hi details ${client} `);
 
     res.json({
       message: "Login successful",

@@ -31,6 +31,11 @@ export const authMiddleware = async (req, res, next) => {
 // Role-based guard
 export const roleMiddleware = (roles) => (req, res, next) => {
   if (!req.user || !roles.includes(req.user.role)) {
+    // 🪵 Debug logging
+    console.log("🧑‍💻 Authenticated user:", req?.user?._id);
+    console.log("🎭 User role:", req?.user?.role);
+    console.log("🚀 Request:", method, originalUrl);
+    console.log("✅ Allowed roles:", roles);
     return res.status(403).json({ message: "Access denied" });
   }
   next();

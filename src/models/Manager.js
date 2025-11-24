@@ -14,10 +14,10 @@ const managerSchema = new mongoose.Schema(
       required: true,
     },
 
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
+    // isActive: {
+    //   type: Boolean,
+    //   default: true,
+    // },
 
     // ============================================
     // ✔ allowedRegion field supports:
