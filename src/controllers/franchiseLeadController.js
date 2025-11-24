@@ -19,17 +19,17 @@ export const addFranchiseLead = async (req, res) => {
       return res.status(403).json({ message: "Only managers can add leads." });
     }
 
-    // const lead = await FranchiseLead.create({
-    //   ownerName,
-    //   ownerEmail,
-    //   ownerPhone,
-    //   fullAddress,
-    //   managerId,
-    // });
+    const lead = await FranchiseLead.create({
+      ownerName,
+      ownerEmail,
+      ownerPhone,
+      fullAddress,
+      managerId,
+    });
 
     return res.status(201).json({
       message: "Franchise Lead created successfully",
-      //   lead,
+      lead,
     });
   } catch (error) {
     console.error("Add Franchise Lead Error:", error);
