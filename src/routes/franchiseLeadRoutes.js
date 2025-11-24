@@ -20,6 +20,7 @@ import {
 // import { auth } from "../middleware/auth.js";
 
 const router = express.Router();
+// Fix: Put static routes BEFORE dynamic routes
 
 router.post(
   "/create",
@@ -27,10 +28,16 @@ router.post(
   roleMiddleware("Manager"),
   addFranchiseLead
 );
-router.post("/:leadId/add-note", authMiddleware, addLeadNote);
-router.patch("/:leadId/status", authMiddleware, updateLeadStatus);
-router.get("/my-leads", authMiddleware, getManagerLeads);
-router.get("/:leadId", authMiddleware, getLeadById);
-router.delete("/:leadId", authMiddleware, deleteLead);
+router.get(
+  "/my-leads",
+  authMiddleware,
+  roleMiddleware("Manager"),
+  getManagerLeads
+);
+// router.post("/:leadId/add-note", authMiddleware, addLeadNote);
+// router.patch("/:leadId/status", authMiddleware, updateLeadStatus);
+
+// router.get("/:leadId", authMiddleware, getLeadById);
+// router.delete("/:leadId", authMiddleware, deleteLead);
 
 export default router;

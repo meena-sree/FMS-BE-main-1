@@ -171,47 +171,120 @@ export const updateLeadStatus = async (req, res) => {
 // ------------------------------------------------------
 // 4️⃣ GET LEADS FOR MANAGER (with filters + pagination)
 // ------------------------------------------------------
+// export const getManagerLeads = async (req, res) => {
+//   try {
+//     const managerId = req.user.managerId;
+
+//     const { status, search, page = 1, limit = 10 } = req.query;
+
+//     let filter = { managerId };
+
+//     if (status) {
+//       filter.status = status;
+//     }
+
+//     if (search) {
+//       filter.$or = [
+//         { ownerName: new RegExp(search, "i") },
+//         { ownerEmail: new RegExp(search, "i") },
+//         { ownerPhone: new RegExp(search, "i") },
+//       ];
+//     }
+
+//     const skip = (page - 1) * limit;
+
+//     const leads = await FranchiseLead.find(filter)
+//       .sort({ createdAt: -1 })
+//       .skip(skip)
+//       .limit(Number(limit));
+
+//     const total = await FranchiseLead.countDocuments(filter);
+
+//     return res.status(200).json({
+//       leads,
+//       pagination: {
+//         total,
+//         page: Number(page),
+//         limit: Number(limit),
+//         totalPages: Math.ceil(total / limit),
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Get Leads Error:", error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+// import FranchiseLead from "../models/FranchiseLead.js";
+
 export const getManagerLeads = async (req, res) => {
   try {
-    const managerId = req.user.managerId;
+    // const managerId = req.user.id; // logged-in manager (user ID)
+    const managerId = req.user.managerId; // logged-in manager (user ID)
+    // console.log(managerId);
+    console.log(req.user.managerId);
+    // console.log(req.user);
 
-    const { status, search, page = 1, limit = 10 } = req.query;
+    // -----------------------
+    // 1. Pagination values
+    // -----------------------
+    const page = parseInt(req.query.page) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 1;
 
+    const skip = (page - 1) * pageSize;
+
+    // -----------------------
+    // 2. Filters
+    // -----------------------
     let filter = { managerId };
 
-    if (status) {
-      filter.status = status;
+    if (req.query.name) {
+      // case-insensitive search
+      filter.ownerName = { $regex: req.query.name, $options: "i" };
     }
 
-    if (search) {
-      filter.$or = [
-        { ownerName: new RegExp(search, "i") },
-        { ownerEmail: new RegExp(search, "i") },
-        { ownerPhone: new RegExp(search, "i") },
-      ];
+    if (req.query.status) {
+      filter.status = req.query.status;
     }
 
-    const skip = (page - 1) * limit;
+    if (req.query.phone) {
+      filter.ownerPhone = req.query.phone;
+    }
 
-    const leads = await FranchiseLead.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit));
+    // Add future filters here...
 
+    // -----------------------
+    // 3. Get total BEFORE skip/limit
+    // -----------------------
     const total = await FranchiseLead.countDocuments(filter);
 
+    // -----------------------
+    // 4. Fetch paginated results
+    // -----------------------
+    const leads = await FranchiseLead.find(filter)
+      .sort({ createdAt: -1 }) // latest first
+      .skip(skip)
+      .limit(pageSize);
+
+    // -----------------------
+    // 5. Pagination meta
+    // -----------------------
+    const pageCount = Math.ceil(total / pageSize);
+
     return res.status(200).json({
-      leads,
-      pagination: {
+      success: true,
+
+      meta: {
+        page,
+        pageSize,
+        pageCount,
         total,
-        page: Number(page),
-        limit: Number(limit),
-        totalPages: Math.ceil(total / limit),
       },
+
+      data: leads,
     });
   } catch (error) {
-    console.error("Get Leads Error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("GET MANAGER LEADS ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
