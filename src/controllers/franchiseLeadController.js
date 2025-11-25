@@ -228,7 +228,7 @@ export const getManagerLeads = async (req, res) => {
     // 1. Pagination values
     // -----------------------
     const page = parseInt(req.query.page) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 2;
 
     const skip = (page - 1) * pageSize;
 
