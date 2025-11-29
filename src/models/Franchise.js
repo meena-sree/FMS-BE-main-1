@@ -18,6 +18,11 @@ const franchiseSchema = new mongoose.Schema(
       default: true,
     },
     revenueSharePercent: { type: Number, default: 0 }, // set by Manager during onboarding
+    validUpTo: {
+      type: Date, // Use the Date type for storing dates
+      required: true, // Typically required for a finite agreement
+      default: null, // Can be set to null or a future date initially
+    },
 
     managerId: {
       type: mongoose.Schema.Types.ObjectId,

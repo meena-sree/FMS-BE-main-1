@@ -379,6 +379,7 @@ export const createFranchise = async (req, res) => {
 
     const {
       franchiseName,
+      validUpTo,
       address,
       location,
       payment,
@@ -389,6 +390,29 @@ export const createFranchise = async (req, res) => {
       revenueSharePercent,
     } = req.body;
     // console.log(payment);
+    // --- NEW VALIDATION BLOCK ---
+
+    const isRevenueShareEmpty =
+      revenueSharePercent === null ||
+      revenueSharePercent === undefined ||
+      revenueSharePercent === "";
+
+    const isValidUpToEmpty =
+      validUpTo === null || validUpTo === undefined || validUpTo === "";
+
+    if (isRevenueShareEmpty || isValidUpToEmpty) {
+      return res.status(400).json({
+        message: "Revenue sharing terms are required.",
+        errors: {
+          revenueSharePercent: isRevenueShareEmpty
+            ? "Revenue Share Percentage is required."
+            : undefined,
+          validUpTo: isValidUpToEmpty
+            ? "Valid Up To date is required."
+            : undefined,
+        },
+      });
+    }
     if (!payment) {
       return res.status(400).json({ message: "Payment data required" });
     }
@@ -403,6 +427,7 @@ export const createFranchise = async (req, res) => {
       managerId,
       address,
       location,
+      validUpTo,
       revenueSharePercent,
       paymentId: paymentDoc._id,
     });

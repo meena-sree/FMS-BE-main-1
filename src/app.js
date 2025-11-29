@@ -11,6 +11,7 @@ import { notFound } from "./middleware/not-found.js";
 // import "./utils/scheduler.js"; // Import scheduler
 import adminRoutes from "./routes/adminRoutes.js";
 import certRoutes from "./routes/certRoutes.js";
+import getLeadFranchiseDataRoutes from "./routes/getDataForAddFranchiseFormRoutes.js";
 import cors from "cors";
 
 // Load environment variables from .env file
@@ -64,6 +65,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/manager/franchise", franchiseLeadRoutes);
 app.use("/api/certificate", certRoutes);
+app.use("/api/getLeadFranchiseData", getLeadFranchiseDataRoutes);
 // app.use("/api/user", attendanceRoutes);
 
 // ----------------------------------------------------
