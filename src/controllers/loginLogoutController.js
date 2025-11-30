@@ -239,7 +239,7 @@ export const login = async (req, res) => {
     // const client = await getClientForRole(user);
     const { client, franchise } = await getClientForRole(user);
 
-    console.log(`hi from loginLogoutController franchise data${franchise} `);
+    // console.log(`hi from loginLogoutController franchise data${franchise} `);
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch)
