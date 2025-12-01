@@ -14,6 +14,7 @@ import certRoutes from "./routes/certRoutes.js";
 import getLeadFranchiseDataRoutes from "./routes/getDataForAddFranchiseFormRoutes.js";
 import getLeadStudentDataRoutes from "./routes/getDataForAddStudentLeadFormRoutes.js";
 import studentLeadFDataRoutes from "./routes/studentLeadRoutes.js";
+import studentDataRoutes from "./routes/StudentRouter.js";
 import cors from "cors";
 
 // Load environment variables from .env file
@@ -70,6 +71,7 @@ app.use("/api/certificate", certRoutes);
 app.use("/api/getLeadFranchiseData", getLeadFranchiseDataRoutes);
 app.use("/api/LeadStudentData", studentLeadFDataRoutes);
 app.use("/api/getLeadStudentData", getLeadStudentDataRoutes);
+app.use("/api/student-data", studentDataRoutes);
 // app.use("/api/user", attendanceRoutes);
 
 // ----------------------------------------------------
