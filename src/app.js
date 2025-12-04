@@ -15,6 +15,7 @@ import getLeadFranchiseDataRoutes from "./routes/getDataForAddFranchiseFormRoute
 import getLeadStudentDataRoutes from "./routes/getDataForAddStudentLeadFormRoutes.js";
 import studentLeadFDataRoutes from "./routes/studentLeadRoutes.js";
 import studentDataRoutes from "./routes/StudentRouter.js";
+import contactRoutes from "./routes/contactRoutes.js";
 import studentPaymentRoutes from "./routes/StudentPaymentRoutes.js";
 import cors from "cors";
 
@@ -43,6 +44,7 @@ app.use(
   cors({
     origin: "http://localhost:5173", // your React frontend
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     exposedHeaders: ["Content-Disposition"],
   })
 );
@@ -69,6 +71,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/manager/franchise", franchiseLeadRoutes);
 app.use("/api/certificate", certRoutes);
+app.use("/api/contact", contactRoutes);
 app.use("/api/getLeadFranchiseData", getLeadFranchiseDataRoutes);
 app.use("/api/LeadStudentData", studentLeadFDataRoutes);
 app.use("/api/getLeadStudentData", getLeadStudentDataRoutes);

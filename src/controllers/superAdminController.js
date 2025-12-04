@@ -38,11 +38,12 @@ export const createAdmin = async (req, res) => {
         message: "All fields are required",
       });
     }
+        const normalizedEmail = String(email).toLowerCase().trim();
 
     // Check if email already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
-      return res.status(400).json({ message: "Email already registered" });
+      return res.status(409).json({ message: "Email already registered" });
     }
 
     // Hash password
@@ -66,7 +67,7 @@ export const createAdmin = async (req, res) => {
     // -------------------------
     const admin = await User.create({
       name,
-      email,
+      email: normalizedEmail,
       passwordHash,
       role: "Admin",
       clientId: client._id,
