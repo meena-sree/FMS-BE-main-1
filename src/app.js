@@ -17,6 +17,7 @@ import studentLeadFDataRoutes from "./routes/studentLeadRoutes.js";
 import studentDataRoutes from "./routes/StudentRouter.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import studentPaymentRoutes from "./routes/StudentPaymentRoutes.js";
+import studentPaymentSlipRoutes from "./routes/paymentSlipRouter.js";
 import cors from "cors";
 
 // Load environment variables from .env file
@@ -77,6 +78,7 @@ app.use("/api/LeadStudentData", studentLeadFDataRoutes);
 app.use("/api/getLeadStudentData", getLeadStudentDataRoutes);
 app.use("/api/student-data", studentDataRoutes);
 app.use("/api/student-payment", studentPaymentRoutes);
+app.use("/api/student-payment-slip", studentPaymentSlipRoutes);
 // app.use("/api/user", attendanceRoutes);
 
 // ----------------------------------------------------

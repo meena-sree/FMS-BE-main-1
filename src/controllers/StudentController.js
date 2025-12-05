@@ -439,6 +439,33 @@ export const createStudent = async (req, res) => {
       }));
     }
 
+    // 5.1 — Distribute GST equally across all installments
+    // const totalGST = gstAmount; // payment.gst from user input
+    // const installmentCount = installments.length;
+
+    // if (installmentCount > 0 && totalGST > 0) {
+    //   const gstPerInstallment = Number(
+    //     (totalGST / installmentCount).toFixed(2)
+    //   );
+
+    //   let remainingGST = totalGST;
+
+    //   installments = installments.map((inst, index) => {
+    //     // Last installment gets leftover (rounding fix)
+    //     if (index === installmentCount - 1) {
+    //       inst.gstAmount = Number(remainingGST.toFixed(2));
+    //     } else {
+    //       inst.gstAmount = gstPerInstallment;
+    //       remainingGST -= gstPerInstallment;
+    //     }
+
+    //     inst.totalPayable =
+    //       inst.originalAmount - (inst.franchiseDiscount || 0) + inst.gstAmount;
+
+    //     return inst;
+    //   });
+    // }
+
     console.log("📅 Installments created:", installments.length);
 
     // 6. Create student object
