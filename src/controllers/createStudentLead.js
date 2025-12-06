@@ -181,3 +181,61 @@ export const getStudentLeads = async (req, res) => {
     });
   }
 };
+
+// to add the followups
+// import StudentLead from "../models/StudentLead.js";
+
+export const addFollowUpNote = async (req, res) => {
+  try {
+    const { id } = req.params; // Lead ID
+    const { note } = req.body; // Only note sent from frontend
+
+    if (!note || note.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Note is required",
+      });
+    }
+
+    // Generate date & formatted time
+    const now = new Date();
+    const formattedTime = now.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    const newFollowUp = {
+      date: now,
+      time: formattedTime,
+      note: note.trim(),
+    };
+
+    // Push to array
+    const updatedLead = await StudentLead.findByIdAndUpdate(
+      id,
+      { $push: { followUpNote: newFollowUp } },
+      { new: true }
+    );
+
+    if (!updatedLead) {
+      return res.status(404).json({
+        success: false,
+        message: "Student lead not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Follow-up note added successfully",
+      // data: updatedLead,
+    });
+  } catch (error) {
+    console.error("Error adding follow-up note:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};

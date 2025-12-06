@@ -85,6 +85,28 @@ const studentLeadSchema = new mongoose.Schema(
       default: "New",
       enum: ["New", "Converted", "Rejected"],
     },
+    reason: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    followUpNote: [
+      {
+        date: {
+          type: Date,
+          default: Date.now, // auto timestamp
+        },
+        time: {
+          type: String, // "03:45 PM"
+          required: true,
+        },
+        note: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+      },
+    ],
 
     digitalMarketingPayment: digitalMarketingSchema,
   },

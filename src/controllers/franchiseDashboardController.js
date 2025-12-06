@@ -23,10 +23,10 @@ export const getFranchiseDashboard = async (req, res) => {
     const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
 
     // ==================== 1. STUDENT LEADS DATA ====================
-    console.log(franchiseId);
+    // console.log(franchiseId);
 
     const studentLeads = await StudentLead.find({ franchiseId });
-    console.log(studentLeads);
+    // console.log(studentLeads);
 
     // Lead statistics
     const leadStats = {
