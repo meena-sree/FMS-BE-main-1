@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 
 export const getFranchiseDashboard = async (req, res) => {
   try {
-    const { franchiseId } = req.user.franchiseId;
+    const franchiseId = req.user.franchiseId;
 
     // Validate franchiseId
     // if (!mongoose.Types.ObjectId.isValid(franchiseId)) {
@@ -23,6 +23,8 @@ export const getFranchiseDashboard = async (req, res) => {
     const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
 
     // ==================== 1. STUDENT LEADS DATA ====================
+    console.log(franchiseId);
+
     const studentLeads = await StudentLead.find({ franchiseId });
     console.log(studentLeads);
 
