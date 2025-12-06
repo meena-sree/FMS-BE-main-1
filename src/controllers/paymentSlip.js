@@ -1643,83 +1643,20 @@
 // };
 // ===================================================================================
 // Optional: Generate HTML for preview (if you want to show preview before download)
-export const getPaymentSlipPreview = async (req, res) => {
-  try {
-    const { studentId, installmentNo } = req.params;
-
-    // Fetch the same data as above
-    const student = await Student.findById(studentId).populate(
-      "ClientId",
-      "institutionName institutionAddress gst logoUrl institutionPhone"
-    );
-
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: "Student not found",
-      });
-    }
-
-    const payment = student.payment[0];
-    const installment = payment.installments.find(
-      (inst) => inst.installmentNo === parseInt(installmentNo)
-    );
-
-    if (!installment) {
-      return res.status(404).json({
-        success: false,
-        message: "Installment not found",
-      });
-    }
-
-    // Return data for HTML preview
-    const slipData = {
-      student: {
-        name: student.name,
-        id: student._id.toString().slice(-6),
-        phone: student.phone,
-        email: student.email,
-        qualification: student.qualification,
-        yearOfPassout: student.yearOfPassout,
-        address: `${student.address.city}, ${student.address.state}`,
-      },
-      course: {
-        name: student.courses[0]?.name,
-        totalFee: payment.totalFee,
-        discount: payment.discount,
-        gst: payment.gst,
-        finalFee: payment.finalFee,
-        totalInstallments: payment.installments.length,
-      },
-      payment: {
-        installmentNo: installment.installmentNo,
-        dueDate: installment.dueDate,
-        amount: installment.totalPayable,
-        status: installment.status,
-      },
-      client: student.ClientId,
-    };
-
-    res.status(200).json({
-      success: true,
-      data: slipData,
-    });
-  } catch (error) {
-    console.error("Error getting slip preview:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error getting slip data",
-      error: error.message,
-    });
-  }
-};
+import path from "path";
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import PDFDocument from "pdfkit";
 import mongoose from "mongoose";
 import Student from "../models/Student.js";
 import Client from "../models/Client.js";
+import fs from "fs";
 
 export const downloadPaymentSlip = async (req, res) => {
+  let doc;
+
   try {
     const { studentId, installmentNo } = req.params;
 
@@ -1795,20 +1732,49 @@ export const downloadPaymentSlip = async (req, res) => {
     const progressPercentage = Math.round((totalPaid / payment.finalFee) * 100);
 
     // Generate receipt number
-    const receiptNumber = `REC${student._id
+    const receiptNumber = `REC${student._id.toString().slice(-6)}${installmentNo
       .toString()
-      .slice(-6)}${installmentNo.padStart(3, "0")}${Date.now()
-      .toString()
-      .slice(-4)}`;
+      .padStart(3, "0")}${Date.now().toString().slice(-4)}`;
 
     // Create PDF document
-    const doc = new PDFDocument({
+    doc = new PDFDocument({
       size: "A4",
       margin: 40,
       bufferPages: true,
+      info: {
+        Title: `Payment Receipt - ${receiptNumber}`,
+        Author: client?.institutionName || "Unlimited Learning Program",
+        Subject: "Payment Receipt",
+        Keywords: "receipt, payment, invoice",
+        Creator: "Payment Management System",
+        CreationDate: new Date(),
+      },
     });
 
-    // Set response headers
+    // Try to register custom fonts, fallback to Helvetica if not found
+    try {
+      const regularFontPath = path.join(
+        __dirname,
+        "../../assets/fonts/Noto_Sans/static/NotoSans_Condensed-Regular.ttf"
+      );
+      const boldFontPath = path.join(
+        __dirname,
+        "../../assets/fonts/Noto_Sans/static/NotoSans_Condensed-Bold.ttf"
+      );
+
+      if (fs.existsSync(regularFontPath) && fs.existsSync(boldFontPath)) {
+        doc.registerFont("Noto", regularFontPath);
+        doc.registerFont("Noto-Bold", boldFontPath);
+        console.log("Custom fonts registered successfully");
+      } else {
+        throw new Error("Font files not found, using Helvetica");
+      }
+    } catch (fontError) {
+      console.warn("Using default Helvetica fonts:", fontError.message);
+      // Use default Helvetica fonts
+    }
+
+    // Set response headers BEFORE piping
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
@@ -1829,13 +1795,6 @@ export const downloadPaymentSlip = async (req, res) => {
       });
     };
 
-    // const formatCurrency = (amount) => {
-    //   return new Intl.NumberFormat("en-IN", {
-    //     style: "currency",
-    //     currency: "INR",
-    //     minimumFractionDigits: 2,
-    //   }).format(amount);
-    // };
     const formatCurrency = (amount) => {
       return `₹${Number(amount).toLocaleString("en-IN", {
         minimumFractionDigits: 2,
@@ -1852,15 +1811,33 @@ export const downloadPaymentSlip = async (req, res) => {
         .stroke();
     };
 
+    // const addSectionHeader = (text, yPos) => {
+    //   doc
+    //     .fontSize(12)
+    //     .font(doc._font ? "Noto-Bold" : "Helvetica-Bold")
+    //     .fillColor("#000000")
+    //     .text(text, 40, yPos);
+
+    //   drawSeparator(yPos + 5);
+    //   return yPos + 20;
+    // };
     const addSectionHeader = (text, yPos) => {
+      // Print the header text
       doc
         .fontSize(12)
-        .font("Helvetica-Bold")
+        .font(doc._font ? "Noto-Bold" : "Helvetica-Bold")
         .fillColor("#000000")
         .text(text, 40, yPos);
 
-      // drawSeparator(yPos + 5);
-      return yPos + 15;
+      // Gap between text and line
+      const separatorY = doc.y + 8; // SAFE spacing
+
+      // Draw separator
+      // drawSeparator(separatorY, 150, 445);
+      drawSeparator(separatorY);
+
+      // Return Y a bit below the separator
+      return separatorY + 15;
     };
 
     const addTwoColumn = (
@@ -1870,20 +1847,19 @@ export const downloadPaymentSlip = async (req, res) => {
       leftBold = false,
       rightBold = false
     ) => {
-      // Left column
-      if (leftBold) {
-        doc.font("Helvetica-Bold");
-      } else {
-        doc.font("Helvetica");
-      }
-      doc.fontSize(10).text(leftText, 40, yPos);
+      // Determine font family based on availability
+      const fontFamily = doc._font ? "Noto" : "Helvetica";
+      const fontFamilyBold = doc._font ? "Noto-Bold" : "Helvetica-Bold";
 
-      // Right column (aligned to right)
-      if (rightBold) {
-        doc.font("Helvetica-Bold");
-      } else {
-        doc.font("Helvetica");
-      }
+      // Left column
+      doc
+        .font(leftBold ? fontFamilyBold : fontFamily)
+        .fontSize(10)
+        .text(leftText, 40, yPos);
+
+      // Right column
+      const rightFont = rightBold ? fontFamilyBold : fontFamily;
+      doc.font(rightFont);
       const textWidth = doc.widthOfString(rightText);
       doc.text(rightText, 555 - textWidth, yPos);
 
@@ -1891,13 +1867,13 @@ export const downloadPaymentSlip = async (req, res) => {
     };
 
     const addAmountRow = (label, amount, yPos, isTotal = false) => {
-      if (isTotal) {
-        doc.font("Helvetica-Bold");
-      } else {
-        doc.font("Helvetica");
-      }
+      const fontFamily = doc._font ? "Noto" : "Helvetica";
+      const fontFamilyBold = doc._font ? "Noto-Bold" : "Helvetica-Bold";
 
-      doc.fontSize(10).text(label, 40, yPos);
+      doc
+        .font(isTotal ? fontFamilyBold : fontFamily)
+        .fontSize(10)
+        .text(label, 40, yPos);
 
       const amountText = formatCurrency(amount);
       const textWidth = doc.widthOfString(amountText);
@@ -1912,7 +1888,7 @@ export const downloadPaymentSlip = async (req, res) => {
     // Institution Name
     doc
       .fontSize(18)
-      .font("Helvetica-Bold")
+      .font(doc._font ? "Noto-Bold" : "Helvetica-Bold")
       .fillColor("#000000")
       .text(client?.institutionName || "Unlimited Learning Program", {
         align: "center",
@@ -1921,7 +1897,7 @@ export const downloadPaymentSlip = async (req, res) => {
     // Institution Address
     doc
       .fontSize(10)
-      .font("Helvetica")
+      .font(doc._font ? "Noto" : "Helvetica")
       .text(
         client?.institutionAddress ||
           "#123 SVA Archade, 2nd floor 70th cross, 5th block Rajajinagar, Bengaluru, Karnataka - 560072",
@@ -1934,6 +1910,7 @@ export const downloadPaymentSlip = async (req, res) => {
     // Contact Info
     doc
       .fontSize(9)
+      .font(doc._font ? "Noto" : "Helvetica")
       .text(
         `GST: ${client?.gst || "AAA123456789"} | Phone: ${
           client?.institutionPhone || "1223456789"
@@ -1942,38 +1919,21 @@ export const downloadPaymentSlip = async (req, res) => {
           align: "center",
         }
       );
-    // ⭐ Add new line below GST
-    // Draw the horizontal line just below GST
-    const lineY = doc.y + 10; // 10px below GST
-    drawSeparator(lineY);
-    currentY = lineY + 10; // move below the line
-    // doc
-    //   .fontSize(9)
-    //   .font("Helvetica")
-    // .text("Your extra line here", { align: "center" });
 
-    // ⭐ Add 2-line gap
-    doc.moveDown(2);
-
-    currentY = doc.y;
-    // Add new line
-    // doc.fontSize(9).font("Helvetica").text("Your extra line here", {
-    //   align: "center",
-    // });
-
-    // Add 2 line gap
-    currentY = doc.y + 20;
-
-    // currentY = doc.y + 10;
-    // drawSeparator(currentY);
+    currentY = doc.y + 3;
+    drawSeparator(currentY);
     currentY += 15;
 
     // ==================== RECEIPT HEADER ====================
-    doc.fontSize(16).font("Helvetica-Bold").text("PAYMENT RECEIPT", {
-      align: "center",
-    });
+    doc
+      .fontSize(16)
+      .font(doc._font ? "Noto-Bold" : "Helvetica-Bold")
+      .fillColor("#000000")
+      .text("PAYMENT RECEIPT", {
+        align: "center",
+      });
 
-    currentY = doc.y + 5;
+    currentY = doc.y + 7;
 
     // Receipt Number and Date in two columns
     currentY = addTwoColumn(
@@ -1984,16 +1944,16 @@ export const downloadPaymentSlip = async (req, res) => {
       true
     );
 
-    currentY += 5;
+    // currentY += 10;
     // drawSeparator(currentY, 150, 445);
-    currentY += 10;
+    // currentY += 15;
 
     // ==================== STUDENT INFORMATION ====================
     currentY = addSectionHeader("STUDENT INFORMATION", currentY);
 
     currentY = addTwoColumn(
       `Name: ${student.name}`,
-      `Student ID: STU${student._id.toString().slice(-6)}`,
+      `Student ID: STU${student._id.toString().slice(-8)}`,
       currentY
     );
     currentY = addTwoColumn(
@@ -2012,7 +1972,7 @@ export const downloadPaymentSlip = async (req, res) => {
       currentY
     );
 
-    currentY += 10;
+    currentY += 15;
 
     // ==================== COURSE DETAILS ====================
     currentY = addSectionHeader("COURSE DETAILS", currentY);
@@ -2028,7 +1988,7 @@ export const downloadPaymentSlip = async (req, res) => {
       currentY
     );
 
-    currentY += 10;
+    currentY += 15;
 
     // ==================== FEE STRUCTURE ====================
     currentY = addSectionHeader("FEE STRUCTURE", currentY);
@@ -2043,9 +2003,9 @@ export const downloadPaymentSlip = async (req, res) => {
       true
     );
 
-    currentY += 10;
-    // drawSeparator(currentY);
-    currentY += 10;
+    currentY += 15;
+    drawSeparator(currentY);
+    currentY += 15;
 
     // ==================== INSTALLMENT DETAILS ====================
     currentY = addSectionHeader("INSTALLMENT PAYMENT DETAILS", currentY);
@@ -2061,7 +2021,7 @@ export const downloadPaymentSlip = async (req, res) => {
       currentY
     );
 
-    currentY += 5;
+    currentY += 10;
 
     // Installment Amount Breakdown
     currentY = addAmountRow(
@@ -2084,20 +2044,26 @@ export const downloadPaymentSlip = async (req, res) => {
 
     // Notes Section
     // if (installment.notes && installment.notes.trim()) {
-    //   doc.fontSize(10).font("Helvetica-Bold").text("Notes:", 40, currentY);
+    //   doc
+    //     .fontSize(10)
+    //     .font(doc._font ? "Noto-Bold" : "Helvetica-Bold")
+    //     .text("Notes:", 40, currentY);
 
     //   currentY += 15;
 
-    //   doc.fontSize(9).font("Helvetica").text(installment.notes, 40, currentY, {
-    //     width: 515,
-    //   });
+    //   doc
+    //     .fontSize(9)
+    //     .font(doc._font ? "Noto" : "Helvetica")
+    //     .text(installment.notes, 40, currentY, {
+    //       width: 515,
+    //     });
 
     //   currentY = doc.y + 10;
     // }
 
-    currentY += 5;
-    // drawSeparator(currentY);
     currentY += 10;
+    drawSeparator(currentY);
+    currentY += 15;
 
     // ==================== PAYMENT SUMMARY ====================
     currentY = addSectionHeader("PAYMENT SUMMARY", currentY);
@@ -2107,7 +2073,9 @@ export const downloadPaymentSlip = async (req, res) => {
     currentY = addTwoColumn(
       `Payment Progress:`,
       `${progressPercentage}%`,
-      currentY
+      currentY,
+      false,
+      true
     );
 
     // Progress bar visualization
@@ -2115,16 +2083,16 @@ export const downloadPaymentSlip = async (req, res) => {
     // const progressBarWidth = 515;
     // const filledWidth = (progressPercentage / 100) * progressBarWidth;
 
-    // // Background bar
+    // Background bar
     // doc.rect(40, progressBarY, progressBarWidth, 8).fillColor("#f0f0f0").fill();
 
-    // // Progress fill
+    // Progress fill
     // doc
     //   .rect(40, progressBarY, filledWidth, 8)
     //   .fillColor(progressPercentage === 100 ? "#28a745" : "#007bff")
     //   .fill();
 
-    // // Border
+    // Border
     // doc
     //   .rect(40, progressBarY, progressBarWidth, 8)
     //   .strokeColor("#000000")
@@ -2134,68 +2102,71 @@ export const downloadPaymentSlip = async (req, res) => {
     // currentY = progressBarY + 20;
 
     // ==================== FOOTER SECTION ====================
-    // ==================== FOOTER SECTION ====================
     currentY += 10;
-
-    // Draw horizontal line above footer
     drawSeparator(currentY);
-    currentY += 10;
+    currentY += 15;
 
-    // Two-column footer (same line)
-    const footerLeft =
-      "This is a computer-generated receipt and does not require a physical signature.";
-    const footerRight = `Generated on: ${new Date().toLocaleString("en-IN")}`;
+    // Terms and Conditions
+    // doc
+    //   .fontSize(8)
+    //   .font(doc._font ? "Noto" : "Helvetica-Oblique")
+    //   .fillColor("#666666")
+    //   .text(
+    //     "This is a computer-generated receipt and does not require a physical signature.",
+    //     {
+    //       align: "center",
+    //     }
+    //   );
 
-    // Left text
+    // currentY = doc.y + 15;
     doc
       .fontSize(8)
-      .font("Helvetica-Oblique")
+      .font(doc._font ? "Noto" : "Helvetica-Oblique")
       .fillColor("#666666")
-      .text(footerLeft, 40, currentY);
+      .text(
+        "This is a computer-generated receipt and does not require a physical signature.",
+        40, // x (safe left margin)
+        currentY, // y position
+        {
+          width: 520, // full width of A4 minus margins
+          align: "center",
+        }
+      );
 
-    // Right text (aligned right)
-    const rightWidth = doc.widthOfString(footerRight);
-    doc
-      .fontSize(8)
-      .font("Helvetica-Oblique")
-      .fillColor("#666666")
-      .text(footerRight, 555 - rightWidth, currentY);
-
-    // Update Y
-    currentY += 20;
+    currentY = doc.y + 7;
 
     // Signature section in two columns
     const signatureY = currentY;
 
     // Left - Authorized by
-    doc
-      .fontSize(9)
-      .font("Helvetica")
-      .fillColor("#000000")
-      .text("Authorized By:", 40, signatureY);
+    // doc
+    //   .fontSize(9)
+    //   .font(doc._font ? "Noto" : "Helvetica")
+    //   .fillColor("#000000")
+    //   .text("Authorized By:", 40, signatureY);
 
-    doc
-      .fontSize(10)
-      .font("Helvetica-Bold")
-      .text(
-        student.ManagerId?.name || "System Administrator",
-        40,
-        signatureY + 12
-      );
+    // doc
+    //   .fontSize(10)
+    //   .font(doc._font ? "Noto-Bold" : "Helvetica-Bold")
+    //   .text(
+    //     student.ManagerId?.name || "System Administrator",
+    //     40,
+    //     signatureY + 12
+    //   );
 
-    doc
-      .fontSize(8)
-      .font("Helvetica")
-      .text(
-        `Contact: ${student.ManagerId?.phone || "1223456789"}`,
-        40,
-        signatureY + 28
-      )
-      .text(
-        `Email: ${student.ManagerId?.email || "support@uplguru.com"}`,
-        40,
-        signatureY + 40
-      );
+    // doc
+    //   .fontSize(8)
+    //   .font(doc._font ? "Noto" : "Helvetica")
+    //   .text(
+    //     `Contact: ${student.ManagerId?.phone || "1223456789"}`,
+    //     40,
+    //     signatureY + 28
+    //   )
+    //   .text(
+    //     `Email: ${student.ManagerId?.email || "support@uplguru.com"}`,
+    //     40,
+    //     signatureY + 40
+    //   );
 
     // Right - Signature box
     // const signatureBoxX = 400;
@@ -2207,7 +2178,7 @@ export const downloadPaymentSlip = async (req, res) => {
 
     // doc
     //   .fontSize(9)
-    //   .font("Helvetica")
+    //   .font(doc._font ? "Noto" : "Helvetica")
     //   .text("Authorized Signature", signatureBoxX + 35, signatureY + 20);
 
     // // Signature line
@@ -2218,16 +2189,14 @@ export const downloadPaymentSlip = async (req, res) => {
 
     // currentY = signatureY + 80;
 
-    // // Generated timestamp
-    // doc
-    //   .fontSize(8)
-    //   .font("Helvetica-Oblique")
-    //   .fillColor("#666666")
-    //   .text(`Generated on: ${new Date().toLocaleString("en-IN")}`, {
-    //     align: "center",
-    //   });
-
-    // currentY = doc.y + 10;
+    // Generated timestamp
+    doc
+      .fontSize(8)
+      .font(doc._font ? "Noto" : "Helvetica-Oblique")
+      .fillColor("#666666")
+      .text(`Generated on: ${new Date().toLocaleString("en-IN")}`, {
+        align: "center",
+      });
 
     // Page number
     // const pages = doc.bufferedPageRange();
@@ -2236,7 +2205,7 @@ export const downloadPaymentSlip = async (req, res) => {
 
     //   doc
     //     .fontSize(8)
-    //     .font("Helvetica")
+    //     .font(doc._font ? "Noto" : "Helvetica")
     //     .fillColor("#666666")
     //     .text(`Page ${i + 1} of ${pages.count}`, 40, doc.page.height - 30, {
     //       align: "center",
@@ -2249,11 +2218,17 @@ export const downloadPaymentSlip = async (req, res) => {
   } catch (error) {
     console.error("Error generating payment slip PDF:", error);
 
-    // If headers already sent, end the response
+    // If PDF document was created, end it
+    if (doc) {
+      doc.end();
+    }
+
+    // If headers already sent, just end the response
     if (res.headersSent) {
       return res.end();
     }
 
+    // Send JSON error response
     res.status(500).json({
       success: false,
       message: "Error generating PDF",
