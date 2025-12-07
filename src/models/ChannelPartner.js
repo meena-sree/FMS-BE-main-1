@@ -5,7 +5,7 @@ const channelPartnerSchema = new mongoose.Schema(
   {
     managerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Franchise",
+      ref: "Manager",
       required: true,
     },
 
