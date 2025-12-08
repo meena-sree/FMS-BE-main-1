@@ -91,7 +91,7 @@ export const getChannelPartners = async (req, res) => {
     // const pageSize = 10;
     page = Number(page);
     // pageSize = Number(pageSize);
-    let pageSize = 1;
+    let pageSize = 10;
 
     const filter = { managerId };
 
@@ -138,6 +138,118 @@ export const getChannelPartners = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error",
+    });
+  }
+};
+
+import ChannelPartnerStudent from "../models/ChannelPartnerStudent.js";
+// import ChannelPartner from "../models/ChannelPartner.js";
+
+/**
+ * Add Channel Partner Student
+ * Body:
+ * - channelPartnerId
+ * - studentName
+ * - phone
+ * - course
+ * - courseFee
+ * - firstPayment { amount, mode, receivedBy }
+ */
+export const addChannelPartnerStudent = async (req, res) => {
+  try {
+    const managerId = req.user.managerId; // from auth middleware
+    console.log(req.user);
+
+    const {
+      studentName,
+      phone,
+      course,
+      courseFee,
+      firstPayment,
+      channelPartnerId,
+    } = req.body;
+    console.log(`this is from the channelparner student controller `);
+    console.log(`=======================================================`);
+    console.log(
+      studentName,
+      phone,
+      course,
+      courseFee,
+      firstPayment,
+      channelPartnerId
+    );
+    console.log(`=======================================================`);
+
+    if (!channelPartnerId || !studentName || !phone || !course) {
+      return res
+        .status(400)
+        .json({ message: "Missing required fields.", success: false });
+    }
+
+    // 🔍 Verify channel partner belongs to logged-in manager
+    const partner = await ChannelPartner.findOne({
+      _id: channelPartnerId,
+      managerId,
+    });
+
+    if (!partner) {
+      return res.status(404).json({
+        message: "Channel Partner not found or not assigned to manager.",
+        success: false,
+      });
+    }
+
+    // New student object
+    let newStudentData = {
+      channelPartnerId,
+      managerId,
+      studentName,
+      phone,
+      course,
+      courseFee: courseFee || 0,
+      totalPaid: 0,
+      payments: [],
+    };
+
+    let commissionToAdd = 0;
+
+    // Handle optional first payment
+    if (firstPayment && firstPayment.amount) {
+      const paymentObj = {
+        amount: firstPayment.amount,
+        mode: firstPayment.mode,
+        receivedBy: req.user.name,
+      };
+
+      newStudentData.payments.push(paymentObj);
+      newStudentData.totalPaid = firstPayment.amount;
+
+      // 💰 Commission calculation
+      const percent = partner.commissionPercent / 100;
+      commissionToAdd = firstPayment.amount * percent;
+    }
+
+    // Create student
+    const newStudent = await ChannelPartnerStudent.create(newStudentData);
+
+    // Update Channel Partner commission
+    if (commissionToAdd > 0) {
+      partner.totalCommissionEarned += commissionToAdd;
+      partner.pendingCommission += commissionToAdd;
+      await partner.save();
+    }
+
+    return res.status(201).json({
+      message: "Channel Partner student added successfully.",
+      success: true,
+      data: newStudent,
+    });
+  } catch (error) {
+    console.error("Add CP Student Error:", error);
+    return res.status(500).json({
+      message: "Internal Server Error",
+      success: false,
+      error: error.message,
     });
   }
 };

@@ -1,6 +1,7 @@
 // routes/channelPartnerRoutes.js
 import express from "express";
 import {
+  addChannelPartnerStudent,
   createChannelPartner,
   getChannelPartners,
 } from "../controllers/channelPartnerController.js";
@@ -9,6 +10,7 @@ import {
   roleMiddleware,
   //   verifyManager,
 } from "../middleware/auth.js";
+import { addPaymentToChannelPartnerStudent } from "../controllers/channelPartnerPaymentController.js";
 
 const router = express.Router();
 //    /api/channel-partner/create/channel-partner
@@ -19,6 +21,18 @@ router.post(
   createChannelPartner
 );
 router.get("/", authMiddleware, roleMiddleware("Manager"), getChannelPartners);
+router.post(
+  "/add-payment/:studentId",
+  authMiddleware,
+  addPaymentToChannelPartnerStudent
+);
+//
+router.post(
+  "/channel-partner/students",
+  authMiddleware,
+  roleMiddleware("Manager"),
+  addChannelPartnerStudent
+);
 
 export default router;
 // ⭐ Want Additional Features?
