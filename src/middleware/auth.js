@@ -48,7 +48,7 @@ export const authMiddleware = async (req, res, next) => {
     console.log(
       `Authenticated → id: ${user._id}, role: ${user.role}, path: ${req.path}`
     );
-    console.log(`the user from the authMiddleware   ${user}`);
+    // console.log(`the user from the authMiddleware   ${user}`);
     req.user = user;
     next();
   } catch (error) {

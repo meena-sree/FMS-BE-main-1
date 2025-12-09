@@ -70,11 +70,6 @@ export const addPaymentToChannelPartnerStudent = async (req, res) => {
 
     return res.status(200).json({
       message: "Payment added successfully.",
-      //   success: true,
-      //   data: {
-      //     student,
-      //     commissionAdded: commissionEarned,
-      //   },
     });
   } catch (error) {
     console.error("Add Payment Error:", error);

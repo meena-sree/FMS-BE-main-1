@@ -158,7 +158,7 @@ import ChannelPartnerStudent from "../models/ChannelPartnerStudent.js";
 export const addChannelPartnerStudent = async (req, res) => {
   try {
     const managerId = req.user.managerId; // from auth middleware
-    console.log(req.user);
+    // console.log(req.user);
 
     const {
       studentName,
@@ -168,17 +168,17 @@ export const addChannelPartnerStudent = async (req, res) => {
       firstPayment,
       channelPartnerId,
     } = req.body;
-    console.log(`this is from the channelparner student controller `);
-    console.log(`=======================================================`);
-    console.log(
-      studentName,
-      phone,
-      course,
-      courseFee,
-      firstPayment,
-      channelPartnerId
-    );
-    console.log(`=======================================================`);
+    // console.log(`this is from the channelparner student controller `);
+    // console.log(`=======================================================`);
+    // console.log(
+    //   studentName,
+    //   phone,
+    //   course,
+    //   courseFee,
+    //   firstPayment,
+    //   channelPartnerId
+    // );
+    // console.log(`=======================================================`);
 
     if (!channelPartnerId || !studentName || !phone || !course) {
       return res
@@ -249,6 +249,72 @@ export const addChannelPartnerStudent = async (req, res) => {
     return res.status(500).json({
       message: "Internal Server Error",
       success: false,
+      error: error.message,
+    });
+  }
+};
+
+// to get a students for the manager
+// import ChannelPartnerStudent from "../models/ChannelPartnerStudent.js";
+
+export const getChannelPartnerStudents = async (req, res) => {
+  try {
+    const managerId = req.user.managerId; // Logged-in manager
+
+    // Query parameters
+    const { name = "", phone = "", page = 1 } = req.query;
+    const pageSize = 10;
+
+    const filters = {
+      managerId,
+    };
+
+    // Apply name filter
+    if (name) {
+      filters.studentName = { $regex: name, $options: "i" };
+    }
+
+    // Apply phone filter
+    if (phone) {
+      filters.phone = { $regex: phone, $options: "i" };
+    }
+
+    // Pagination logic
+    const pageNumber = parseInt(page) || 1;
+    const limit = parseInt(pageSize) || 10;
+    const skip = (pageNumber - 1) * limit;
+
+    // Count total
+    const total = await ChannelPartnerStudent.countDocuments(filters);
+
+    // Fetch data
+    const students = await ChannelPartnerStudent.find(filters)
+      .populate("channelPartnerId", "partnerName phone email commissionPercent")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const pageCount = Math.ceil(total / limit);
+    // console.log(students);
+
+    return res.status(200).json({
+      success: true,
+      // message: "Students fetched successfully",
+      data: students,
+      meta: {
+        pagination: {
+          page: pageNumber,
+          pageSize: limit,
+          pageCount,
+          total,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Get Students Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
       error: error.message,
     });
   }

@@ -4,6 +4,7 @@ import {
   addChannelPartnerStudent,
   createChannelPartner,
   getChannelPartners,
+  getChannelPartnerStudents,
 } from "../controllers/channelPartnerController.js";
 import {
   authMiddleware,
@@ -13,7 +14,9 @@ import {
 import { addPaymentToChannelPartnerStudent } from "../controllers/channelPartnerPaymentController.js";
 
 const router = express.Router();
+router.get("/list/students", authMiddleware, getChannelPartnerStudents);
 //    /api/channel-partner/create/channel-partner
+
 router.post(
   "/create/channel-partner",
   authMiddleware,
